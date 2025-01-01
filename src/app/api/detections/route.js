@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Detection from '@/models/Detection';
+import CryptoJS from 'crypto-js';
 
 export async function POST(request) {
   try {
@@ -21,7 +22,13 @@ export async function GET() {
   try {
     await dbConnect();
     const detections = await Detection.find({}).sort({ timestamp: -1 });
-    return NextResponse.json({ success: true, data: detections });
+
+    const encryptedData = CryptoJS.AES.encrypt(
+      JSON.stringify(detections),
+      process.env.ENCRYPTION_KEY || 'default_encryption_key'
+    ).toString();
+
+    return NextResponse.json({ success: true, data: encryptedData });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error.message },
