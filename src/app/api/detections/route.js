@@ -5,9 +5,21 @@ import CryptoJS from 'crypto-js';
 
 export async function POST(request) {
   try {
+
+    if (request.method === 'OPTIONS') {
+      return new NextResponse('', {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
+      });
+    }
+
     await dbConnect();
     const data = await request.json();
-    
+
     const detection = await Detection.create(data);
     return NextResponse.json({ success: true, data: detection }, { status: 201 });
   } catch (error) {
