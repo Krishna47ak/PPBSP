@@ -1,76 +1,19 @@
 "use client"
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Calendar } from 'lucide-react';
+import CryptoJS from 'crypto-js';
 
 const DetectionDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [confidenceThreshold, setConfidenceThreshold] = useState(0);
+  const [detections, setDetections] = useState([]);
 
-  const detections = [
-    {
-      "frame_id": 100,
-      "timestamp": "2024-12-17 20:45:05.402682",
-      "frame_file": "https://miro.medium.com/v2/resize:fit:768/1*VXZ8CamGG2Z0M0N4t0Fmng.jpeg",
-      "description": "The image shows a person with a full beard wearing a white t-shirt with a black and white striped design on the front. They have short black hair and are wearing a pair of dark-rimmed glasses with noticeable dark frames around each eye and nose. The background features a white wall with a simple, modern design complemented by a framed painting or poster hanging on it behind the person facing the camera directly towards the viewer's right sidefaker. The person appears to be sitting on a white or light-colored sofa, and the overall setting gives off a clean and contemporary feel.",
-      "detections": [
-        {
-          "label": "person",
-          "confidence_score": 0.7194070816040039,
-          "bounding_box": {
-            "x": 85,
-            "y": 119,
-            "width": 575,
-            "height": 378
-          },
-          "priority": "urgent"
-        }
-      ]
-    },
-    {
-      "frame_id": 100,
-      "timestamp": "2024-12-17 20:45:05.402682",
-      "frame_file": "https://i.pinimg.com/736x/82/91/f9/8291f91c45ac2d4273138dda496024a5.jpg",
-      "description": "The image shows a person with a full beard wearing a white t-shirt with a black and white striped design on the front. They have short black hair and are wearing a pair of dark-rimmed glasses with noticeable dark frames around each eye and nose. The background features a white wall with a simple, modern design complemented by a framed painting or poster hanging on it behind the person facing the camera directly towards the viewer's right sidefaker. The person appears to be sitting on a white or light-colored sofa, and the overall setting gives off a clean and contemporary feel.",
-      "detections": [
-        {
-          "label": "person",
-          "confidence_score": 0.7194070816040039,
-          "bounding_box": {
-            "x": 85,
-            "y": 119,
-            "width": 575,
-            "height": 378
-          },
-          "priority": "urgent"
-        }
-      ]
-    },
-    {
-      "frame_id": 100,
-      "timestamp": "2024-12-17 20:45:05.402682",
-      "frame_file": "https://i0.wp.com/neptune.ai/wp-content/uploads/2022/10/Object-detection-computer-vision.jpg?ssl=1",
-      "description": "The image shows a person with a full beard wearing a white t-shirt with a black and white striped design on the front. They have short black hair and are wearing a pair of dark-rimmed glasses with noticeable dark frames around each eye and nose. The background features a white wall with a simple, modern design complemented by a framed painting or poster hanging on it behind the person facing the camera directly towards the viewer's right sidefaker. The person appears to be sitting on a white or light-colored sofa, and the overall setting gives off a clean and contemporary feel.",
-      "detections": [
-        {
-          "label": "person",
-          "confidence_score": 0.7194070816040039,
-          "bounding_box": {
-            "x": 85,
-            "y": 119,
-            "width": 575,
-            "height": 378
-          },
-          "priority": "urgent"
-        }
-      ]
-    }
-  ]
 
   const filteredDetections = detections.filter(detection => {
     const matchesSearch =
@@ -87,6 +30,31 @@ const DetectionDashboard = () => {
 
     return matchesSearch && matchesPriority && matchesConfidence;
   });
+
+  useEffect(() => {
+    const fetchDetections = async () => {
+      try {
+        const response = await fetch('/api/detections');
+        const result = await response.json();
+
+        if (result.success) {
+          // Decrypt the data
+          const bytes = CryptoJS.AES.decrypt(
+            result.data,
+            process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'default_encryption_key'
+          );
+          const decryptedData = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+          setDetections(decryptedData);
+        }
+      } catch (error) {
+        console.error('Error fetching detections:', error);
+      }
+    };
+
+    fetchDetections();
+  }, []);
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -117,6 +85,7 @@ const DetectionDashboard = () => {
                   <SelectContent>
                     <SelectItem value="all">All Priorities</SelectItem>
                     <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="normal">Normal</SelectItem>
                   </SelectContent>
                 </Select>
@@ -158,7 +127,7 @@ const DetectionDashboard = () => {
             >
               <div className="relative h-48 bg-gray-100">
                 <img
-                  src={detection.frame_file}
+                  src={`data:image/jpeg;base64,${detection.frame_file}`}
                   alt={`Frame ${detection.frame_id}`}
                   className="w-full h-full object-cover"
                 />
@@ -176,8 +145,8 @@ const DetectionDashboard = () => {
                     <span
                       key={index}
                       className={`px-3 py-1 rounded-full text-sm font-medium ${det.priority === 'urgent'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-green-100 text-green-800'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-green-100 text-green-800'
                         }`}
                     >
                       {det.priority}
