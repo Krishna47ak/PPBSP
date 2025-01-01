@@ -13,6 +13,7 @@ const DetectionDashboard = () => {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [confidenceThreshold, setConfidenceThreshold] = useState(0);
   const [detections, setDetections] = useState([]);
+  const [isExpanded, setIsExpanded] = useState(false);
 
 
   const filteredDetections = detections.filter(detection => {
@@ -30,6 +31,14 @@ const DetectionDashboard = () => {
 
     return matchesSearch && matchesPriority && matchesConfidence;
   });
+
+  const toggleExpand = (frame_id) => {
+    if (isExpanded === frame_id) {
+      setIsExpanded('');
+    } else {
+      setIsExpanded(frame_id);
+    }
+  };
 
   useEffect(() => {
     const fetchDetections = async () => {
@@ -57,7 +66,7 @@ const DetectionDashboard = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-200">
       <div className="container mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-6">Detection Report Dashboard</h1>
@@ -154,9 +163,21 @@ const DetectionDashboard = () => {
                   ))}
                 </div>
 
-                <p className="text-sm text-gray-600 mb-4 line-clamp-3">
-                  {detection.description}
-                </p>
+                <div>
+                  <p
+                    className={`text-sm text-gray-600 ${isExpanded === detection.frame_id ? '' : 'line-clamp-3'
+                      }`}
+                  >
+                    {detection.description}
+                  </p>
+                  <button
+                    onClick={() => toggleExpand(detection.frame_id)}
+                    className="text-blue-500 text-sm mb-4 underline"
+                  >
+                    {isExpanded === detection.frame_id ? 'Show less' : 'Show more'}
+                  </button>
+                </div>
+
 
                 {detection.detections.map((det, index) => (
                   <div
